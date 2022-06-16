@@ -5,6 +5,7 @@ import jax.numpy as jnp
 from math import sin, cos
 from matplotlib import pyplot as plt
 import itertools
+import scipy
 
 class costs:
 
@@ -32,8 +33,8 @@ class LQR(costs):
         else:
             self.Q = Q
 
-        self.x = dynamics.x0.reshape(4,1)
-        self.u = dynamics.u0.reshape(2,1)
+        self.x = dynamics.x0
+        self.u = dynamics.u0
         self.R = R
         self.dynamics = dynamics
 
@@ -65,16 +66,40 @@ class LQR(costs):
 
         assert type(self.R) != None, 'No R value'
 
+        K = self.find_K(p = np.array([-1.0, -1.1, -1.2, -1.3]))
+        u = self.x * (K * -1)
+
         x_transQ = jnp.dot(self.x.T, self.Q)
-        u_transR = self.u.T * self.R
+        u_transR = u.T * self.R
 
         x_transQx = jnp.dot(x_transQ, self.x)
-        u_transRu = jnp.dot(u_transR, self.u)
+        u_transRu = jnp.dot(u_transR, u)
 
         J = x_transQx + u_transRu
+        J = max(J[0])
 
-        print(J)
+        print('LOSS VAL IS :', J)
         return J
+    
+    def find_K(self, p: np.array):
+        """
+        function to find control input K assuming u = -kx
+        
+        x_dot = (A-BK)*x
+        """
+        system = self.dynamics
+
+        M = scipy.signal.place_poles(system.A, system.B, p)
+        K = M.gain_matrix
+        
+        print('ORIGINAL K', K)
+        print('K MULT -1', K*-1)
+        temp = system.A-(system.B*K)
+        u = system.x0 * (K*-1.)
+        print('K MATRIX', K)
+        print('u', u)
+        print('(A-B*K) eign values', jnp.linalg.eig(temp)[0] )
+        return K
 
     def update_dynamics(self, u):
         system = self.dynamics

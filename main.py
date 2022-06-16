@@ -9,7 +9,7 @@ from inspect import signature
 from utils import dynamics
 from MPC import MPC
 
-def f1(x1, x2, x3, x4, u=1.):
+def f1(x1, x2, x3, x4, u1=1.):
     return x2
 
 def f2(x1, x2, x3, x4, u=1.):
@@ -43,12 +43,12 @@ def f4(x1, x2, x3, x4, u=1.):
 def main():
     print(signature(dynamics))
     x0=np.asarray([0., 0., pi_const, 0.])
-    u0=np.asarray([0., 0., 0., 0.])
+    u0=np.asarray([0.])
     x1, x2, x3, x4 = x0[0], x0[1], x0[2], x0[3]
     cnst = {'F' : 1.0, 'g' : 9.8, 'M' : 1.0, 'm' : 0.1, 'l' : 0.5, 'Fm' : 10.0}
     state_def = {'pos' : x1, 'pos_dot' : x2, 'theta' : x3, 'theta_dot' : x4}
     myDynamics = dynamics(state_def, cnst, x0, u0, fn1=f1, fn2=f2, fn3=f3, fn4=f4)
-    myMPC = MPC(x0, 2, myDynamics, None)
+    myMPC = MPC(x0, 1, myDynamics, Q=None)
 
     myMPC.jacobian_linearization()
     #print(signature(MPC()))

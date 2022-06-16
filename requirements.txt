@@ -1,4 +1,6 @@
 numpy
 jax
 jaxlib
-
+gym
+matplotlib
+scipy
