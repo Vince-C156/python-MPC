@@ -48,11 +48,13 @@ class MPC:
         x : a list of the variables representing the model's current state.
         u : Vector used to store the MPC's calculated control action to stabalize the system.
         n_actions : number of possible actions the model can preform
+
+        cost : user initalized cost object from costs.py which outputs a control sequence u = -kx
         """
         self.x = x
         self.u = np.zeros((n_actions, 1))
-        self.A, self.B, self.C, self.D = None, None, None, None
-
+        #self.A, self.B, self.C, self.D = None, None, None, None
+        self.cost = loss_function
         #setting Bdot to a column vector of ones with the same shape as u if user does not specify
 
         """
@@ -71,15 +73,32 @@ class MPC:
 
         self.dynamics.fixedptn_linearization()
   
-    def pred_step(self, action):
-        pass
+    def set_cost(self, cost_obj):
+        """
+        Takes in a cost object from costs.py and sets self.cost to that instance.
+        """
 
-    def calc_MHE(self, horizon_n):
-        pass
+        self.cost = cost_obj
 
-    def optimize_convex(self):
-        pass
 
+    def optimize_convex(self, T):
+        """
+        finds control sequence policy u = -kx T time steps ahead based on cost function set and sets 
+        self.u to that sequence
+        """
+        assert self.cost != None, 'No cost object instance set'
+        self.cost.x = self.x
+        self.u = self.cost.min(T)
+        return self.u
+
+    def get_action(self):
+        """
+        returns calculated actuation for the most current timestamp
+        """
+        u = jnp.squeeze(self.u)
+        print("RETURNING", u[0])
+        return u[0]
+        
     def calc_feasibility():
         pass
     

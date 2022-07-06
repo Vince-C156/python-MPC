@@ -6,6 +6,7 @@ from math import sin, cos
 from matplotlib import pyplot as plt
 import itertools
 import scipy
+import cvxpy as cp
 
 class costs:
 
@@ -20,9 +21,9 @@ class costs:
 
 class LQR(costs):
 
-    def __init__(self, x, u, dynamics, Q=None, R=None):
+    def __init__(self, x, u_range, dynamics, Q=None, R=None):
 
-        for var in [x, u]:
+        for var in [x]:
             assert type(var) == np.ndarray, 'array types need to be ndarray'
 
         super().__init__()
@@ -33,12 +34,12 @@ class LQR(costs):
         else:
             self.Q = Q
 
-        self.x = dynamics.x0
-        self.u = dynamics.u0
+        self.x = x
+        self.u_range = u_range
         self.R = R
         self.dynamics = dynamics
 
-        self.domain_actions = [np.asarray(i) for i in itertools.product([0.,1.], repeat=len(self.u) )]
+        #self.domain_actions = []
 
         if dynamics.A == None:
             print("No exisiting A and B of lineraization")
@@ -49,7 +50,12 @@ class LQR(costs):
             print()
             print('Matrix B')
             print(dynamics.B)
-
+        """
+        self.U = cp.Variable(4)
+        self.function = cp.Problem(cp.Minimize(cp.quad_form(xdot, Q) + cp.quadform(self.U, R)),
+                                  [self.dynamics.A @ self.x + self.dynamics.B @ self.U == xdot,
+                                   self.U >= -3., self.U <= 3.])
+        """
         w, T = jnp.linalg.eig(dynamics.A)
         TA = jnp.matmul(T, dynamics.A)
         D = jnp.matmul(TA, jnp.linalg.inv(T))
@@ -97,7 +103,7 @@ class LQR(costs):
         temp = system.A-(system.B*K)
         u = system.x0 * (K*-1.)
         print('K MATRIX', K)
-        print('u', u)
+        print('u as a result of -kx', u)
         print('(A-B*K) eign values', jnp.linalg.eig(temp)[0] )
         return K
 
@@ -121,15 +127,36 @@ class LQR(costs):
         print("NEW X0", self.dynamics.x0)
         self.dynamics.fixedptn_linearization()
 
-    def cost2go(self, t):
-        if t == 0:
-            return []
+    def min(self, T):
+        cost = 0
+        actions = 1
+        states = 4
         
-        all_costs = [[u, self.step_cost(u)] for u in self.domain_actions]
-        minimum = min(all_costs, key = lambda pair : pair[1])
-        u_dot = minimum[0].T
-        self.update_dynamics(u_dot)
-        return self.cost2go(t-1).append(minimum)
+        x = cp.Variable((states, T + 1))
+        U = cp.Variable((actions, T))
+        print("LQR X", self.x)
+        print("=======================")
+        print("LQR U", U)
+        print("LQR R", self.R)
+        constraints = []
+        print(x[0])
+        for t in range(T):
+            cost += cp.quad_form(x[:, t + 1], self.Q) + cp.quad_form(U[:, t], self.R)
+            #cost += cp.quad_form(U[:, t], self.R)
+            constraints += [x[:, t + 1] == self.dynamics.A @ x[:, t] + self.dynamics.B @ U[:, t], U >= -3., U <= 3.]
+        term_constr = self.dynamics.x0.T
+        print(term_constr[0])
+        constraints += [x[:, 0] == self.x.T]
+
+        problem = cp.Problem(cp.Minimize(cost), constraints)
+        result = problem.solve()
+        policy = U.value
+        simulated_states = x.value
+        print("POLICY :", policy)
+        
+        print("state evolution" , simulated_states.T)
+        
+        return policy
 
     def spec(self):
         print("======================")
