@@ -5,4 +5,7 @@ gym
 matplotlib
 scipy
 cvxpy
-
+opencv-python
+pydrake
+mpld3
+pydot

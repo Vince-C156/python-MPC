@@ -60,8 +60,42 @@ class dynamics:
         self.B = jac_B
         print("UPDATED A AND B SYSTEM MATRICES")
 
+"""
+class objective():
+
+    self.objective_function
+    self.constraints
+    self.x0
+
+    def __init__(self, problem, constraints, dynamics, x0, solver_name):
+
+        self.solver_name = solver_name
+        self.problem = problem
+        self.x0 = x0
 
 
+        #lambda cp.quad_form(x[:, t + 1], self.Q) + cp.quad_form(U[:, t], self.R)
+
+    def min(self, T):
+
+        cost = 0
+
+        #x = cp.Variable((states, T + 1))
+        #U = cp.Variable((actions, T))
+        
+        
+        constraints += [x[:, 0] == self.x0.T]
+
+        problem = cp.Problem(cp.Minimize(cost), constraints)
+        result = problem.solve()
+        policy = U.value
+        simulated_states = x.value
+        print("POLICY :", policy)
+
+        print("state evolution" , simulated_states.T)
+
+        return policy
+"""
 def get_cartpole_dynamics():
 
     def f1(x1, x2, x3, x4, u=0.):
@@ -70,8 +104,8 @@ def get_cartpole_dynamics():
     def f2(x1, x2, x3, x4, u=0.):
         #F = u
         g = 9.8
-        M = 3.0
-        m = 1.0
+        M = 1.0
+        m = 0.1
         l = 0.5
         L = 2.0
         Fm = 10.0
@@ -87,8 +121,8 @@ def get_cartpole_dynamics():
     def f4(x1, x2, x3, x4, u=0.):
         #F = u
         g = 9.8
-        M = 3.0
-        m = 1.0
+        M = 1.0
+        m = 0.1
         l = 0.5
         L = 2.0
         Fm = 10.0
@@ -99,7 +133,7 @@ def get_cartpole_dynamics():
         #return ( -u / (m*l*(sm + lax.sin(x3)**2)) * (lax.cos(x3) - x4**2*L*lax.sin(x3)*lax.cos(x3)) + (1 + sm)*(g*lax.sin(x3)) )
 
 
-    x0=np.asarray([1., 0., 0., 0.])
+    x0=np.asarray([10., 0., 0., 0.])
     u0=np.asarray([0.])
     x1, x2, x3, x4 = x0[0], x0[1], x0[2], x0[3]
     cnst = {'F' : 1.0, 'g' : 9.8, 'M' : 1.0, 'm' : 0.1, 'l' : 0.5, 'Fm' : 10.0}
@@ -108,3 +142,7 @@ def get_cartpole_dynamics():
 
 
     return myDynamics
+
+
+
+
